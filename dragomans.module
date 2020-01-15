@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * Contains dragomans.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function dragomans_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the dragomans module.
+    case 'help.page.dragomans':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Dragomans') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+
+/**
+ * Implements hook_jsonld_alter_normalized_array().
+ */
+function islandora_jsonld_alter_normalized_array(EntityInterface $entity, array &$normalized, array $context) {
+  $context_manager = \Drupal::service('context.manager');
+  foreach ($context_manager->getActiveReactions('\Drupal\islandora\ContextReaction\NormalizerAlterReaction') as $reaction) {
+    $reaction->execute($entity, $normalized, $context);
+    foreach ($context_manager->getActiveContexts() as $context_config) {
+      try {
+        if ($context_config->getReaction($reaction->getPluginId())) {
+          $context['cacheability']->addCacheTags($context_config->getCacheTags());
+        };
+      }
+      catch (PluginNotFoundException $e) {
+        // Squash :(.
+      }
+    }
+  }
+}
+
